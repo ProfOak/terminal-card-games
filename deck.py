@@ -72,20 +72,3 @@ class Deck():
         self.deck = [card] + self.deck
         self.size += 1
 
-
-'''
-d = Deck()
-d.build_deck()
-d.shuffle()
-
-a = Deck()
-a.return2deck(d.draw())
-a.return2deck(d.draw())
-
-b = Deck()
-b.return2deck(d.draw())
-b.return2deck(d.draw())
-
-print a+b
-'''
-
