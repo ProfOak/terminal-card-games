@@ -2,17 +2,25 @@ import random
 
 class Card():
     def __init__(self, suit, rank):
+        """
+        suit:   Heart, Diamond, Club, Spade
+        rank:   Ace through King
+        hidden: card is face down or face up
+        """
         self.suit = suit
         self.rank = rank
         self.hidden = True
 
     def __str__(self):
+        """ pretty printing """
         return "[{}{:>3}]".format(self.suit, self.rank)
 
     def flip(self):
+        """ useful for poker, etc... """
         self.hidden = not self.hidden
 
     def value(self):
+        """ when you want specifics """
         return (self.suit, self.rank)
 
 
@@ -23,19 +31,21 @@ class Deck():
         self.size = 0
 
     def __str__(self):
+        """ pretty printing """
         return ", ".join([ str(card) for card in self.deck])
 
     def __getitem__(self, i):
+        """ get items like a list of the cards """
         return self.deck[i]
 
     def __add__(self, x):
-        # list concat
+        """ combine decks """
         for card in x:
             self.deck.append(card)
         return self
 
     def build_deck(self):
-        """ regular ol' deck of playing cards """
+        """ put together regular ol' deck of playing cards """
         suits = ["H", "D", "S", "C"]
         ranks = ["A"] + [ str(i) for i in range(2, 11) ] + ["J", "Q", "K"]
 
@@ -43,7 +53,7 @@ class Deck():
         self.size = 52
 
     def shuffle(self):
-        """ self explanitory """
+        """ shuffle the deck """
         tmp = []
 
         l = len(self.deck)
@@ -53,7 +63,7 @@ class Deck():
         self.deck = tmp
 
     def is_empty(self):
-        """ tells if the deck is empty """
+        """ is the deck empty? """
         return self.size <= 0
 
     def draw(self):

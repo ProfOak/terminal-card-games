@@ -4,15 +4,24 @@ import time
 
 class Player():
     def __init__(self, name, cash):
+        """
+        name:  name of the player
+        cash:  used for gambling
+        hand:  your current hand of cards
+        total: blackjack total
+        """
+
         self.name  = name
         self.cash  = cash
-        self.total = 0
         self.hand  = Deck()
+        self.total = 0
 
     def __str__(self):
+        """ pretty printing """
         return "{} (${:>5}): <{:>3}> | {}".format(self.name, self.cash, self.total, self.hand)
 
     def __add__(self, card):
+        """ add card to the hand """
         self.hand.return_card(card)
         self._find_total()
         return self
@@ -35,18 +44,21 @@ class Player():
         self.total = total
 
     def discard(self):
+        """ remove all cards from hand, to put back into the deck """
         tmp = self.hand
         self.hand  = Deck()
         self.total = 0
         return tmp
 
     def wager(self, cash):
-        # wager more than you have
+        """ subtract cash, return the pot amount """
+        # You can't wager more than you have
         if cash > self.cash:
+            # cash goes to 0, bet all you have
+            tmp = self.cash
             self.cash = 0
-            return self.cash
+            return tmp
 
-        # or not
         else:
             self.cash -= cash
             return cash
@@ -68,12 +80,15 @@ def main():
 
         print "The current standings"
         print "Player: ${:>5}, Dealer: ${:>5}".format(player.cash, dealer.cash)
-        print "Commands: bet, hit, hold"
+        print "Commands: bet, hit, stay"
 
         # make sure to get the right bet amount
+        print "(Betting phase)"
         action = raw_input("> ")
         bet_regex = re.compile("bet\s*(\d*)")
-        while bet_regex.match(action).group(1) == "":
+        while bet_regex.match(action) is None or \
+                bet_regex.match(action).group(1) == "":
+            print "(Betting phase)"
             action = raw_input("> ")
 
         # we know it's a number because of the regex
@@ -98,7 +113,7 @@ def main():
                 print "---  Player busts. Dealer wins the hand. ---"
                 discard_pile += player.discard()
                 discard_pile += dealer.discard()
-                dealer.cash += current_pot
+                dealer.cash  += current_pot
                 current_pot = 0
                 break
 
@@ -112,6 +127,7 @@ def main():
 
         if current_pot == 0:
             continue
+
         print "(Dealer phase)"
         while True:
             print dealer
@@ -127,7 +143,7 @@ def main():
                 "--- Draw. Dealer wins the hand. ---"
                 discard_pile += player.discard()
                 discard_pile += dealer.discard()
-                dealer.cash += current_pot
+                dealer.cash  += current_pot
                 current_pot = 0
                 break
 
@@ -138,6 +154,7 @@ def main():
                 dealer.cash += current_pot
                 current_pot = 0
                 break
+
             elif dealer.total < 21:
                 print "The Dealer hits..."
                 time.sleep(2)
@@ -146,6 +163,7 @@ def main():
     if player.cash > dealer.cash:
         print "Congratulations Player, you won all the money"
         return
+
     else:
         print "Sorry, Dealer wins this time."
         return
