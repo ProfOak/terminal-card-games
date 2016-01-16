@@ -28,6 +28,12 @@ class Deck():
     def __getitem__(self, i):
         return self.deck[i]
 
+    def __add__(self, x):
+        # list concat
+        for card in x:
+            self.deck.append(card)
+        return self
+
     def build_deck(self):
         """ regular ol' deck of playing cards """
         suits = ["H", "D", "S", "C"]
@@ -57,7 +63,7 @@ class Deck():
         self.size -= 1
         return self.deck.pop()
 
-    def return2deck(self, card):
+    def return_card(self, card):
         """
         push front operation
 
@@ -66,12 +72,20 @@ class Deck():
         self.deck = [card] + self.deck
         self.size += 1
 
+
 '''
 d = Deck()
 d.build_deck()
 d.shuffle()
 
-print d.is_empty()
+a = Deck()
+a.return2deck(d.draw())
+a.return2deck(d.draw())
 
-print d
+b = Deck()
+b.return2deck(d.draw())
+b.return2deck(d.draw())
+
+print a+b
 '''
+

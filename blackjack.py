@@ -1,83 +1,155 @@
 from deck import Deck
+import re
 import time
 
-def find_total(deck):
-    """ Total is blackjack specific """
-    total = 0
-    for card in deck:
-        if card.rank.isdigit():
-            total += int(card.rank)
-        elif card.rank in ["K", "Q", "J"]:
-            total += 10
+class Player():
+    def __init__(self, name, cash):
+        self.name  = name
+        self.cash  = cash
+        self.total = 0
+        self.hand  = Deck()
 
-    # count Aces at the end
-    for card in deck:
-        if card.rank == "A":
-            if total + 11 < 21:
-                total += 11
-            else:
-                total += 1
-    return total
+    def __str__(self):
+        return "{} (${:>5}): <{:>3}> | {}".format(self.name, self.cash, self.total, self.hand)
 
-def pretty_print(name, deck, total):
-    print "{}: {}    <{:>3}>".format(name, deck, total)
+    def __add__(self, card):
+        self.hand.return_card(card)
+        self._find_total()
+        return self
+
+    def _find_total(self):
+        """ Total is blackjack specific """
+        total = 0
+        for card in self.hand:
+            if card.rank.isdigit():
+                total += int(card.rank)
+            elif card.rank in ["K", "Q", "J"]:
+                total += 10
+
+        for card in self.hand:
+            if card.rank == "A":
+                if total + 11 < 21:
+                    total += 11
+                else:
+                    total += 1
+        self.total = total
+
+    def discard(self):
+        tmp = self.hand
+        self.hand  = Deck()
+        self.total = 0
+        return tmp
+
+    def wager(self, cash):
+        # wager more than you have
+        if cash > self.cash:
+            self.cash = 0
+            return self.cash
+
+        # or not
+        else:
+            self.cash -= cash
+            return cash
 
 def main():
-    d = Deck()
-    d.build_deck()
-    d.shuffle()
+    draw_pile = Deck()
+    draw_pile.build_deck()
+    draw_pile.shuffle()
 
-    # new class, player can have money
-    # goal to win all the money
-    player = Deck()
-    dealer = Deck()
+    # for when you run out of cards in your deck
+    discard_pile = Deck()
 
-    player.return2deck(d.draw())
-    dealer.return2deck(d.draw())
+    # goal to win all the money, start with 10k each
+    player = Player("Player", 10000)
+    dealer = Player("Dealer", 10000)
+    current_pot = 0
 
-    player.return2deck(d.draw())
-    dealer.return2deck(d.draw())
+    while player.cash > 0 and dealer.cash > 0:
 
-    d_total = find_total(dealer)
-    pretty_print("Dealer", dealer, d_total)
+        print "The current standings"
+        print "Player: ${:>5}, Dealer: ${:>5}".format(player.cash, dealer.cash)
+        print "Commands: bet, hit, hold"
 
-    print "Player phase"
-    while True:
-        p_total = find_total(player)
-        pretty_print("Player", player, p_total)
-
-        if p_total > 21:
-            print "Player loses"
-            return
-
+        # make sure to get the right bet amount
         action = raw_input("> ")
-        if action.startswith("bet"):
-            pass
-        elif action.startswith("hit"):
-            print "Player draws..."
-            player.return2deck(d.draw())
-        elif action.startswith("stay"):
-            break
+        bet_regex = re.compile("bet\s*(\d*)")
+        while bet_regex.match(action).group(1) == "":
+            action = raw_input("> ")
 
-    print "Dealer phase"
-    while True:
-        d_total = find_total(dealer)
-        pretty_print("Dealer", dealer, d_total)
-        if d_total > 21:
-            print "Dealer busts! You win!"
-            return
+        # we know it's a number because of the regex
+        cash = bet_regex.match(action).group(1)
+        current_pot += player.wager(int(cash))
+        current_pot += dealer.wager(int(cash))
 
-        if  d_total == p_total:
-            "Draw, dealer wins"
+        # each participant draws 2 cards, in a circle
+        player += draw_pile.draw()
+        dealer += draw_pile.draw()
 
-        if d_total > p_total:
-            print "Dealer wins!"
-            break
-        elif d_total < 21:
-            # hit
-            print "The Dealer hits..."
-            time.sleep(2)
-            dealer.return2deck(d.draw())
+        player += draw_pile.draw()
+        dealer += draw_pile.draw()
+        print dealer
+        print player
+
+        print "(Player phase)"
+        while True:
+            print player
+
+            if player.total > 21:
+                print "---  Player busts. Dealer wins the hand. ---"
+                discard_pile += player.discard()
+                discard_pile += dealer.discard()
+                dealer.cash += current_pot
+                current_pot = 0
+                break
+
+            action = raw_input("> ")
+            if action.startswith("hit"):
+                print "Player draws..."
+                player += draw_pile.draw()
+
+            elif action.startswith("stay"):
+                break
+
+        if current_pot == 0:
+            continue
+        print "(Dealer phase)"
+        while True:
+            print dealer
+            if dealer.total > 21:
+                print "--- Dealer busts! Player wins the hand! ---"
+                discard_pile += player.discard()
+                discard_pile += dealer.discard()
+                player.cash += current_pot
+                current_pot = 0
+                break
+
+            if  dealer.total == player.total:
+                "--- Draw. Dealer wins the hand. ---"
+                discard_pile += player.discard()
+                discard_pile += dealer.discard()
+                dealer.cash += current_pot
+                current_pot = 0
+                break
+
+            elif dealer.total > player.total:
+                print "--- Dealer wins the hand. ---"
+                discard_pile += player.discard()
+                discard_pile += dealer.discard()
+                dealer.cash += current_pot
+                current_pot = 0
+                break
+            elif dealer.total < 21:
+                print "The Dealer hits..."
+                time.sleep(2)
+                dealer += draw_pile.draw()
+
+    if player.cash > dealer.cash:
+        print "Congratulations Player, you won all the money"
+        return
+    else:
+        print "Sorry, Dealer wins this time."
+        return
 
 if __name__ == "__main__":
     main()
+
